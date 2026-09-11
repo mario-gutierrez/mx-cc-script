@@ -1,292 +1,59 @@
 <!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MX Creative Console Keypad Demo</title>
-    <style>
-        :root {
-            color-scheme: dark;
-            --ink: #f5f2eb;
-            --muted: #aca9a2;
-            --panel: rgba(24, 25, 27, 0.88);
-            --line: rgba(255, 255, 255, 0.13);
-            --accent: #66e28a;
-            --signal: #f3b84b;
-            font-family: "Aptos Display", "Segoe UI Variable", sans-serif;
-        }
-
-        * { box-sizing: border-box; }
-
-        body {
-            min-height: 100vh;
-            margin: 0;
-            color: var(--ink);
-            background:
-                linear-gradient(135deg, rgba(243, 184, 75, 0.08), transparent 42%),
-                repeating-linear-gradient(90deg, transparent 0 39px, rgba(255, 255, 255, 0.025) 40px),
-                #111214;
-        }
-
-        main {
-            width: min(100% - 32px, 980px);
-            min-height: 100vh;
-            margin: auto;
-            display: grid;
-            grid-template-columns: minmax(300px, 440px) minmax(280px, 1fr);
-            align-items: center;
-            gap: clamp(28px, 6vw, 72px);
-            padding: 32px 0;
-        }
-
-        .device-stage {
-            position: relative;
-            width: min(100%, 380px);
-            aspect-ratio: 842 / 981;
-            justify-self: center;
-            user-select: none;
-        }
-
-        .device-stage > img {
-            width: 100%;
-            height: 100%;
-            display: block;
-            object-fit: contain;
-            filter: drop-shadow(0 28px 34px rgba(0, 0, 0, 0.48));
-        }
-
-        .key, .page-key {
-            position: absolute;
-            border: 2px solid transparent;
-            transition: border-color 120ms ease, box-shadow 120ms ease, transform 120ms ease;
-        }
-
-        .key {
-            padding: 0;
-            overflow: hidden;
-            border-radius: 8%;
-            background: #050505;
-            cursor: pointer;
-        }
-
-        .key img { width: 100%; height: 100%; display: block; object-fit: cover; }
-        .key:hover { border-color: rgba(243, 184, 75, 0.75); }
-        .key:disabled { cursor: default; }
-        .key.active, .page-key.active {
-            border-color: var(--accent);
-            box-shadow: 0 0 18px rgba(102, 226, 138, 0.72);
-            transform: scale(0.97);
-        }
-
-        .page-key { border-radius: 26%; pointer-events: none; }
-
-        .controls {
-            align-self: center;
-            border-left: 1px solid var(--line);
-            padding-left: clamp(24px, 5vw, 56px);
-        }
-
-        .eyebrow {
-            margin: 0 0 10px;
-            color: var(--signal);
-            font: 700 0.75rem/1.2 Consolas, monospace;
-            text-transform: uppercase;
-        }
-
-        h1 { margin: 0; max-width: 11ch; font-size: clamp(2.1rem, 6vw, 4.6rem); line-height: 0.96; letter-spacing: 0; }
-        .summary { max-width: 38ch; margin: 22px 0; color: var(--muted); line-height: 1.55; }
-
-        #connect {
-            min-height: 44px;
-            padding: 0 18px;
-            border: 1px solid #8df0a9;
-            border-radius: 6px;
-            color: #07140b;
-            background: var(--accent);
-            font: inherit;
-            font-weight: 700;
-            cursor: pointer;
-        }
-
-        #connect:disabled { opacity: 0.55; cursor: default; }
-
-        #status {
-            min-height: 76px;
-            margin-top: 18px;
-            padding: 14px;
-            border: 1px solid var(--line);
-            border-radius: 6px;
-            background: var(--panel);
-            color: #d8d6d0;
-            font: 0.82rem/1.5 Consolas, monospace;
-            white-space: pre-wrap;
-        }
-
-        #status.error { border-color: #e57167; color: #ffb6ae; }
-
-        @media (max-width: 740px) {
-            main { grid-template-columns: 1fr; gap: 18px; padding-top: 24px; }
-            .device-stage { width: min(78vw, 340px); }
-            .controls { border-left: 0; border-top: 1px solid var(--line); padding: 24px 0 0; }
-            h1 { max-width: none; font-size: clamp(2rem, 12vw, 3.4rem); }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MX Creative Console / Script Lab</title>
+<style>
+:root{color-scheme:dark;--bg:#111315;--panel:#1a1d20;--panel2:#202428;--line:#373d42;--ink:#f4f0e8;--muted:#9ea6a8;--lime:#b8ee54;--orange:#ff9b54;--red:#ff776d;font-family:"Aptos","Segoe UI Variable",sans-serif}*{box-sizing:border-box}body{margin:0;min-height:100vh;color:var(--ink);background:radial-gradient(circle at 15% 0%,#293126 0,transparent 34%),linear-gradient(135deg,#111315 0%,#171b1c 55%,#121416 100%)}button,textarea{font:inherit}button{border:1px solid var(--line);border-radius:4px;padding:9px 13px;color:var(--ink);background:var(--panel2);cursor:pointer}button:hover:not(:disabled){border-color:var(--lime)}button:disabled{cursor:not-allowed;opacity:.45}.app{width:min(1440px,calc(100% - 36px));margin:auto;padding:24px 0 36px}header{display:flex;align-items:end;justify-content:space-between;gap:20px;padding-bottom:22px;border-bottom:1px solid var(--line)}.kicker,.label{color:var(--orange);font:700 11px/1.2 Consolas,monospace;letter-spacing:.12em;text-transform:uppercase}h1{margin:8px 0 0;font-size:clamp(2rem,4vw,3.7rem);line-height:.95;letter-spacing:0}.connection{display:flex;align-items:center;gap:12px}.dot{width:10px;height:10px;border-radius:50%;background:var(--red)}.dot.live{background:var(--lime);box-shadow:0 0 12px var(--lime)}.workspace{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(330px,.8fr);gap:18px;margin-top:18px}.panel{border:1px solid var(--line);background:rgba(26,29,32,.88)}.panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:48px;padding:9px 12px;border-bottom:1px solid var(--line)}.tools{display:flex;flex-wrap:wrap;gap:7px}.primary{color:#10150b;border-color:var(--lime);background:var(--lime);font-weight:700}.danger{border-color:var(--red);color:#ffaaa4}.editor-wrap{position:relative;min-height:560px}#editor{display:block;width:100%;min-height:560px;resize:vertical;padding:18px 20px;border:0;outline:0;color:#e7e5dc;background:#101214;font:14px/1.65 Consolas,"Cascadia Code",monospace;tab-size:2}.hint{padding:9px 12px;border-top:1px solid var(--line);color:var(--muted);font:12px/1.4 Consolas,monospace}.side{display:grid;align-content:start;gap:18px}.section{padding:14px}.section h2{margin:0 0 12px;font-size:15px;letter-spacing:.03em}.emulator{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:330px;margin:auto}.key-screen{aspect-ratio:1;display:grid;place-items:center;position:relative;overflow:hidden;border:2px solid #4d5656;border-radius:7px;background:#050606}.key-screen canvas{width:100%;height:100%}.key-screen.active{border-color:var(--lime);box-shadow:0 0 15px rgba(184,238,84,.4);transform:translateY(1px)}.key-number{position:absolute;right:7px;bottom:4px;color:rgba(255,255,255,.6);font:11px Consolas,monospace;pointer-events:none}.aux{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.aux button.active{border-color:var(--lime);color:var(--lime)}#status{min-height:58px;padding:12px;border:1px solid var(--line);color:var(--muted);background:#121517;font:12px/1.5 Consolas,monospace;white-space:pre-wrap}#status.error{border-color:var(--red);color:#ffaaa4}.api{margin:0;color:var(--muted);font:12px/1.6 Consolas,monospace}.api code{color:var(--lime)}@media(max-width:900px){.workspace{grid-template-columns:1fr}.side{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:560px){.app{width:min(100% - 22px,1440px);padding-top:15px}header{align-items:start;flex-direction:column}.side{grid-template-columns:1fr}}
+</style>
 </head>
 <body>
-    <main>
-        <div class="device-stage" id="device" aria-label="Interactive MX Creative Console keypad">
-            <img src="./assets/mx-keypad.png" alt="Logitech MX Creative Console keypad">
-            <span class="page-key" id="key-9"></span>
-            <span class="page-key" id="key-10"></span>
-        </div>
+<main class="app">
+<header><div><div class="kicker">MX Creative Console / Script Lab</div><h1>Make a tiny game.</h1></div><div class="connection"><span class="dot" id="connection-dot"></span><span id="connection-label">Disconnected</span><button id="connect" class="primary" type="button">Connect keypad</button></div></header>
+<div class="workspace">
+<section class="panel"><div class="panel-head"><span class="label">game.js</span><div class="tools"><button id="run" class="primary" type="button">Run</button><button id="stop" class="danger" type="button" disabled>Stop</button><button id="save" type="button">Save</button><button id="load" type="button">Load</button></div></div><div class="editor-wrap"><textarea id="editor" spellcheck="false" aria-label="JavaScript game editor"></textarea></div><div class="hint">Worker sandbox · update at 30 Hz · display frames at 10 Hz · keys: 1–9, PREV, NEXT</div></section>
+<aside class="side"><section class="panel section"><h2>Keypad preview</h2><div class="emulator" id="emulator"></div><div class="aux"><button id="prev" type="button">PREV</button><button id="next" type="button">NEXT</button></div></section><section class="panel section"><h2>Runtime</h2><div id="status" role="status" aria-live="polite">Ready. Run a script or connect a keypad.</div></section><section class="panel section"><h2>Script API</h2><p class="api"><code>init(state)</code><br><code>update(dt, input, state)</code><br><code>draw(display, state)</code><br><br><code>display.keys[0].fill('#101820')</code><br><code>display.keys[4].fillRect(x,y,w,h,'#b8ee54')</code><br><code>input.isDown(5)</code><br><code>input.isPressed('NEXT')</code></p></section></aside>
+</div>
+</main>
+<script type="module">
+import { MXCreativeConsoleClient } from '../js/mx-creative-console.min.mjs';
+const editor=document.querySelector('#editor'),status=document.querySelector('#status'),connectButton=document.querySelector('#connect'),runButton=document.querySelector('#run'),stopButton=document.querySelector('#stop'),dot=document.querySelector('#connection-dot'),connectionLabel=document.querySelector('#connection-label');
+const keyCanvases=[],keyElements=[],inputState={down:new Set(),pressed:new Set()};let worker=null,connected=false,uploadTail=Promise.resolve(),keypadIndexBase=1;const client=new MXCreativeConsoleClient();
+const starter=`function init(state) {
+  state.x = 54;
+  state.y = 54;
+}
 
-        <section class="controls">
-            <p class="eyebrow">WebHID / Keypad</p>
-            <h1>Creative Console</h1>
-            <p class="summary">Connect a keypad, press a physical key to highlight it, or select one of the nine displays to send a new color tile.</p>
-            <button id="connect" type="button">Connect keypad</button>
-            <div id="status" role="status" aria-live="polite">Checking browser support...</div>
-        </section>
-    </main>
+function update(dt, input, state) {
+  if (input.isDown(4)) state.x -= 40 * dt;
+  if (input.isDown(6)) state.x += 40 * dt;
+  if (input.isDown(2)) state.y -= 40 * dt;
+  if (input.isDown(8)) state.y += 40 * dt;
+  state.x = Math.max(4, Math.min(104, state.x));
+  state.y = Math.max(4, Math.min(104, state.y));
+}
 
-    <script src="../js/mx-creative-console.min.js"></script>
-    <script>
-        const { MXCreativeConsoleClient } = window.MXCreativeConsole;
-        const client = new MXCreativeConsoleClient();
-        const connectButton = document.getElementById('connect');
-        const device = document.getElementById('device');
-        const status = document.getElementById('status');
-        const previewUrls = new Map();
-        let connected = false;
-        let previousPressed = new Set();
-
-        const layout = {
-            key: { width: 162 / 842, height: 162 / 981 },
-            keys: [
-                [120, 120], [334, 120], [548, 120],
-                [120, 334], [334, 334], [548, 334],
-                [120, 548], [334, 548], [548, 548]
-            ],
-            paging: [
-                { left: 120 / 842, top: 775 / 981, width: 183 / 842, height: 95 / 981 },
-                { left: 331 / 842, top: 775 / 981, width: 183 / 842, height: 95 / 981 }
-            ]
-        };
-
-        const controlIdToIndex = new Map([
-            [0x0001, 0], [0x0002, 1], [0x0003, 2], [0x0004, 3], [0x0005, 4],
-            [0x0006, 5], [0x0007, 6], [0x0008, 7], [0x0009, 8],
-            [0x01a1, 9], [0x01a2, 10]
-        ]);
-
-        function setStatus(message, isError = false) {
-            status.textContent = message;
-            status.classList.toggle('error', isError);
-        }
-
-        function createTile(index, hue) {
-            const canvas = document.createElement('canvas');
-            canvas.width = 118;
-            canvas.height = 118;
-            const context = canvas.getContext('2d');
-            context.fillStyle = `hsl(${hue} 78% 43%)`;
-            context.fillRect(0, 0, 118, 118);
-            context.fillStyle = '#fff';
-            context.font = '700 42px Aptos, sans-serif';
-            context.textAlign = 'center';
-            context.textBaseline = 'middle';
-            context.fillText(String(index + 1), 59, 59);
-            return new Promise((resolve, reject) => canvas.toBlob(
-                (blob) => blob ? resolve(blob) : reject(new Error('Could not encode the key image.')),
-                'image/jpeg',
-                0.9
-            ));
-        }
-
-        function showPreview(index, blob) {
-            const previousUrl = previewUrls.get(index);
-            if (previousUrl) URL.revokeObjectURL(previousUrl);
-            const url = URL.createObjectURL(blob);
-            previewUrls.set(index, url);
-            document.getElementById(`preview-${index}`).src = url;
-        }
-
-        async function updateKey(index, hue = Math.random() * 360, upload = true) {
-            const blob = await createTile(index, hue);
-            showPreview(index, blob);
-            if (upload) {
-                const file = new File([blob], `key-${index + 1}.jpg`, { type: 'image/jpeg' });
-                await client.uploadContextualDisplayImage(file, { mode: 'single', keyNumber: index + 1 });
-            }
-        }
-
-        layout.keys.forEach(([x, y], index) => {
-            const button = document.createElement('button');
-            const preview = document.createElement('img');
-            button.type = 'button';
-            button.className = 'key';
-            button.id = `key-${index}`;
-            button.title = `Update key ${index + 1}`;
-            button.disabled = true;
-            button.style.left = `${x / 842 * 100}%`;
-            button.style.top = `${y / 981 * 100}%`;
-            button.style.width = `${layout.key.width * 100}%`;
-            button.style.height = `${layout.key.height * 100}%`;
-            preview.id = `preview-${index}`;
-            preview.alt = `Key ${index + 1} preview`;
-            button.appendChild(preview);
-            button.addEventListener('click', () => updateKey(index).catch((error) => setStatus(error.message, true)));
-            device.appendChild(button);
-            updateKey(index, 38 + index * 17, false);
-        });
-
-        layout.paging.forEach((rect, index) => {
-            const element = document.getElementById(`key-${index + 9}`);
-            for (const property of ['left', 'top', 'width', 'height']) {
-                element.style[property] = `${rect[property] * 100}%`;
-            }
-        });
-
-        client.on('status', ({ message, isError }) => setStatus(message, isError));
-        client.on('keypadKeysChanged', ({ activeControlIds }) => {
-            const currentPressed = new Set(activeControlIds.map((id) => controlIdToIndex.get(id)).filter(Number.isInteger));
-            document.querySelectorAll('.key, .page-key').forEach((element) => {
-                const index = Number(element.id.slice(4));
-                element.classList.toggle('active', currentPressed.has(index));
-            });
-            for (const index of currentPressed) {
-                if (!previousPressed.has(index)) setStatus(`Key down: ${index < 9 ? index + 1 : index === 9 ? 'PREV' : 'NEXT'}`);
-            }
-            previousPressed = currentPressed;
-        });
-
-        connectButton.addEventListener('click', async () => {
-            try {
-                connectButton.disabled = true;
-                const devices = await client.requestDeviceAccessAndScan();
-                const keypad = devices.find((entry) => entry.role === 'keypad');
-                if (!keypad) throw new Error('No compatible keypad was selected.');
-                await client.connectAvailableDevice(keypad.index);
-                connected = true;
-                document.querySelectorAll('.key').forEach((element) => { element.disabled = false; });
-                setStatus(`Connected: ${keypad.friendlyName}\nSelect a display tile to upload a new color.`);
-            } catch (error) {
-                connectButton.disabled = false;
-                setStatus(error.message, true);
-            }
-        });
-
-        if (!('hid' in navigator)) {
-            connectButton.disabled = true;
-            setStatus('WebHID is unavailable. Open this page in Chrome, Edge, or Opera over HTTP or HTTPS.', true);
-        } else {
-            setStatus('Ready. Select Connect keypad to grant WebHID access.');
-        }
-
-        window.addEventListener('beforeunload', () => {
-            if (connected) client.disconnectAll();
-            for (const url of previewUrls.values()) URL.revokeObjectURL(url);
-        });
-    </script>
+function draw(display, state) {
+  display.keys.forEach((key) => key.fill('#101820'));
+  display.keys[4].fillRect(state.x, state.y, 10, 10, '#b8ee54');
+}`;editor.value=starter;
+for(let index=0;index<9;index+=1){const element=document.createElement('div');element.className='key-screen';const canvas=document.createElement('canvas');canvas.width=118;canvas.height=118;const label=document.createElement('span');label.className='key-number';label.textContent=index+1;element.append(canvas,label);document.querySelector('#emulator').append(element);keyCanvases.push(canvas);keyElements.push(element)}
+function setStatus(message,error=false){status.textContent=message;status.classList.toggle('error',error)}
+function setPressed(ids){if(ids.includes(0))keypadIndexBase=0;else if(ids.includes(9))keypadIndexBase=1;const mapping=new Map([...Array(9)].map((_,index)=>[index+keypadIndexBase,index]).concat([[0x01a1,'PREV'],[0x01a2,'NEXT']]));const next=new Set(ids.map((id)=>mapping.get(id)).filter((value)=>value!==undefined));inputState.pressed=new Set([...next].filter((value)=>!inputState.down.has(value)));inputState.down=next;keyElements.forEach((element,index)=>element.classList.toggle('active',next.has(index)));document.querySelector('#prev').classList.toggle('active',next.has('PREV'));document.querySelector('#next').classList.toggle('active',next.has('NEXT'))}
+function useInput(){const down=new Set(inputState.down),pressed=new Set(inputState.pressed);inputState.pressed.clear();return{down:[...down],pressed:[...pressed]}}
+function renderFrames(frames){frames.forEach((commands,index)=>{const context=keyCanvases[index].getContext('2d');commands.forEach((command)=>{if(command.type==='fill'){context.fillStyle=command.color;context.fillRect(0,0,118,118)}if(command.type==='rect'){context.fillStyle=command.color;context.fillRect(command.x,command.y,command.width,command.height)}})})}
+function queueUpload(index){uploadTail=uploadTail.then(async()=>{if(!connected)return;const blob=await new Promise((resolve,reject)=>keyCanvases[index].toBlob((value)=>value?resolve(value):reject(new Error('Could not encode key image.')),'image/jpeg',.82));await client.uploadContextualDisplayImage(new File([blob],`key-${index+1}.jpg`,{type:'image/jpeg'}),{mode:'single',keyNumber:index+1})}).catch((error)=>setStatus(error.message,true));return uploadTail}
+function startWorker(){stopWorker();const workerBody=function(){let game=null,state={},last=performance.now(),nextRender=0;self.onmessage=(event)=>{if(event.data.type==='start'){try{game={};new Function('game',event.data.code+'\n;game.init=typeof init===\"function\"?init:null;game.update=typeof update===\"function\"?update:null;game.draw=typeof draw===\"function\"?draw:null;')(game);state={};game.init?.(state);self.postMessage({type:'status',message:'Running'});tick()}catch(error){self.postMessage({type:'error',message:error.message})}}else if(event.data.type==='input')game&&(game.input=event.data.input);else if(event.data.type==='stop')close()};function tick(){if(!game)return;const now=performance.now(),dt=Math.min((now-last)/1000,.1);last=now;const current=game.input||{down:[],pressed:[]},input={isDown:(key)=>current.down.includes(key),isPressed:(key)=>current.pressed.includes(key)};try{game.update?.(dt,input,state);if(now>=nextRender){const frames=[...Array(9)].map(()=>[]),display={keys:frames.map((commands)=>({fill:(color)=>commands.push({type:'fill',color}),fillRect:(x,y,width,height,color)=>commands.push({type:'rect',x,y,width,height,color})}))};game.draw?.(display,state);self.postMessage({type:'frame',frames});nextRender=now+100}setTimeout(tick,33)}catch(error){self.postMessage({type:'error',message:error.message})}}};
+const source=`(${workerBody.toString()})();`;worker=new Worker(URL.createObjectURL(new Blob([source],{type:'text/javascript'})));worker.onmessage=({data})=>{if(data.type==='frame'){renderFrames(data.frames);data.frames.forEach((_,index)=>queueUpload(index))}if(data.type==='status')setStatus(data.message);if(data.type==='error'){setStatus(data.message,true);stopWorker()}};worker.postMessage({type:'start',code:editor.value});runButton.disabled=true;stopButton.disabled=false}
+function stopWorker(){worker?.terminate();worker=null;runButton.disabled=false;stopButton.disabled=true}
+setInterval(()=>worker?.postMessage({type:'input',input:useInput()}),33);
+client.on('status',({message,isError})=>setStatus(message,isError));client.on('keypadKeysChanged',({activeControlIds})=>setPressed(activeControlIds));
+connectButton.addEventListener('click',async()=>{connectButton.disabled=true;try{const devices=await client.requestDeviceAccessAndScan(),keypad=devices.find((entry)=>entry.role==='keypad');if(!keypad)throw new Error('No compatible keypad was selected.');await client.connectAvailableDevice(keypad.index);connected=true;dot.classList.add('live');connectionLabel.textContent=keypad.friendlyName||'Keypad connected';setStatus('Connected. Run a script to mirror frames to the hardware.')}catch(error){setStatus(error.message,true);connectButton.disabled=false}});
+runButton.addEventListener('click',startWorker);stopButton.addEventListener('click',()=>{stopWorker();setStatus('Stopped.')});document.querySelector('#prev').addEventListener('click',()=>{setPressed([0x01a1]);setTimeout(()=>setPressed([]),80)});document.querySelector('#next').addEventListener('click',()=>{setPressed([0x01a2]);setTimeout(()=>setPressed([]),80)});
+async function saveScript(){if('showSaveFilePicker'in window){const handle=await window.showSaveFilePicker({suggestedName:'game.js',types:[{description:'JavaScript Game',accept:{'text/javascript':['.js']}}]}),writable=await handle.createWritable();await writable.write(editor.value);await writable.close()}else{const link=document.createElement('a');link.href=URL.createObjectURL(new Blob([editor.value],{type:'text/javascript'}));link.download='game.js';link.click();URL.revokeObjectURL(link.href)}}
+async function loadScript(){if('showOpenFilePicker'in window){const[handle]=await window.showOpenFilePicker({types:[{description:'JavaScript Game',accept:{'text/javascript':['.js']}}]});editor.value=await(await handle.getFile()).text()}else{const input=Object.assign(document.createElement('input'),{type:'file',accept:'.js'});input.onchange=async()=>{if(input.files[0])editor.value=await input.files[0].text()};input.click()}}
+document.querySelector('#save').addEventListener('click',()=>saveScript().catch((error)=>setStatus(error.message,true)));document.querySelector('#load').addEventListener('click',()=>loadScript().catch((error)=>setStatus(error.message,true)));if(!('hid'in navigator)){connectButton.disabled=true;setStatus('WebHID is unavailable. Use Chrome or Edge over HTTP/HTTPS.',true)}window.addEventListener('beforeunload',()=>{stopWorker();if(connected)client.disconnectAll()});
+</script>
 </body>
 </html>
