@@ -26,10 +26,10 @@ const starter=`function init(state) {
 }
 
 function update(dt, input, state) {
-  if (input.isDown(4)) state.x -= 40 * dt;
-  if (input.isDown(6)) state.x += 40 * dt;
-  if (input.isDown(2)) state.y -= 40 * dt;
-  if (input.isDown(8)) state.y += 40 * dt;
+  if (input.isDown(3)) state.x -= 40 * dt;
+  if (input.isDown(5)) state.x += 40 * dt;
+  if (input.isDown(1)) state.y -= 40 * dt;
+  if (input.isDown(7)) state.y += 40 * dt;
   state.x = Math.max(4, Math.min(104, state.x));
   state.y = Math.max(4, Math.min(104, state.y));
 }
@@ -38,7 +38,7 @@ function draw(display, state) {
   display.keys.forEach((key) => key.fill('#101820'));
   display.keys[4].fillRect(state.x, state.y, 10, 10, '#b8ee54');
 }`;editor.value=starter;
-for(let index=0;index<9;index+=1){const element=document.createElement('div');element.className='key-screen';const canvas=document.createElement('canvas');canvas.width=118;canvas.height=118;const label=document.createElement('span');label.className='key-number';label.textContent=index+1;element.append(canvas,label);document.querySelector('#emulator').append(element);keyCanvases.push(canvas);keyElements.push(element)}
+for(let index=0;index<9;index+=1){const element=document.createElement('div');element.className='key-screen';const canvas=document.createElement('canvas');canvas.width=118;canvas.height=118;const label=document.createElement('span');label.className='key-number';label.textContent=index;element.append(canvas,label);document.querySelector('#emulator').append(element);keyCanvases.push(canvas);keyElements.push(element)}
 function setStatus(message,error=false){status.textContent=message;status.classList.toggle('error',error)}
 function setPressed(ids){if(ids.includes(0))keypadIndexBase=0;else if(ids.includes(9))keypadIndexBase=1;const mapping=new Map([...Array(9)].map((_,index)=>[index+keypadIndexBase,index]).concat([[0x01a1,'PREV'],[0x01a2,'NEXT']]));const next=new Set(ids.map((id)=>mapping.get(id)).filter((value)=>value!==undefined));inputState.pressed=new Set([...next].filter((value)=>!inputState.down.has(value)));inputState.down=next;keyElements.forEach((element,index)=>element.classList.toggle('active',next.has(index)));document.querySelector('#prev').classList.toggle('active',next.has('PREV'));document.querySelector('#next').classList.toggle('active',next.has('NEXT'))}
 function useInput(){const down=new Set(inputState.down),pressed=new Set(inputState.pressed);inputState.pressed.clear();return{down:[...down],pressed:[...pressed]}}
