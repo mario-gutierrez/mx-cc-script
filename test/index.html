@@ -3,23 +3,24 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MX Creative Console / Script Lab</title>
+<title>MX Keypad / Script Lab</title>
 <style>
 :root{color-scheme:dark;--bg:#111315;--panel:#1a1d20;--panel2:#202428;--line:#373d42;--ink:#f4f0e8;--muted:#9ea6a8;--lime:#b8ee54;--orange:#ff9b54;--red:#ff776d;font-family:"Aptos","Segoe UI Variable",sans-serif}*{box-sizing:border-box}body{margin:0;min-height:100vh;color:var(--ink);background:radial-gradient(circle at 15% 0%,#293126 0,transparent 34%),linear-gradient(135deg,#111315 0%,#171b1c 55%,#121416 100%)}button,textarea{font:inherit}button{border:1px solid var(--line);border-radius:4px;padding:9px 13px;color:var(--ink);background:var(--panel2);cursor:pointer}button:hover:not(:disabled){border-color:var(--lime)}button:disabled{cursor:not-allowed;opacity:.45}.app{width:min(1440px,calc(100% - 36px));margin:auto;padding:24px 0 36px}header{display:flex;align-items:end;justify-content:space-between;gap:20px;padding-bottom:22px;border-bottom:1px solid var(--line)}.kicker,.label{color:var(--orange);font:700 11px/1.2 Consolas,monospace;letter-spacing:.12em;text-transform:uppercase}h1{margin:8px 0 0;font-size:clamp(2rem,4vw,3.7rem);line-height:.95;letter-spacing:0}.connection{display:flex;align-items:center;gap:12px}.dot{width:10px;height:10px;border-radius:50%;background:var(--red)}.dot.live{background:var(--lime);box-shadow:0 0 12px var(--lime)}.workspace{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(330px,.8fr);gap:18px;margin-top:18px}.panel{border:1px solid var(--line);background:rgba(26,29,32,.88)}.panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:48px;padding:9px 12px;border-bottom:1px solid var(--line)}.tools{display:flex;flex-wrap:wrap;gap:7px}.primary{color:#10150b;border-color:var(--lime);background:var(--lime);font-weight:700}.danger{border-color:var(--red);color:#ffaaa4}.editor-wrap{position:relative;min-height:560px}#editor{display:block;width:100%;min-height:560px;resize:vertical;padding:18px 20px;border:0;outline:0;color:#e7e5dc;background:#101214;font:14px/1.65 Consolas,"Cascadia Code",monospace;tab-size:2}.hint{padding:9px 12px;border-top:1px solid var(--line);color:var(--muted);font:12px/1.4 Consolas,monospace}.side{display:grid;align-content:start;gap:18px}.section{padding:14px}.section h2{margin:0 0 12px;font-size:15px;letter-spacing:.03em}.emulator{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:330px;margin:auto}.key-screen{aspect-ratio:1;display:grid;place-items:center;position:relative;overflow:hidden;border:2px solid #4d5656;border-radius:7px;background:#050606}.key-screen canvas{width:100%;height:100%}.key-screen.active{border-color:var(--lime);box-shadow:0 0 15px rgba(184,238,84,.4);transform:translateY(1px)}.key-number{position:absolute;right:7px;bottom:4px;color:rgba(255,255,255,.6);font:11px Consolas,monospace;pointer-events:none}.aux{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.aux button.active{border-color:var(--lime);color:var(--lime)}#status{min-height:58px;padding:12px;border:1px solid var(--line);color:var(--muted);background:#121517;font:12px/1.5 Consolas,monospace;white-space:pre-wrap}#status.error{border-color:var(--red);color:#ffaaa4}.api{margin:0;color:var(--muted);font:12px/1.6 Consolas,monospace}.api code{color:var(--lime)}@media(max-width:900px){.workspace{grid-template-columns:1fr}.side{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:560px){.app{width:min(100% - 22px,1440px);padding-top:15px}header{align-items:start;flex-direction:column}.side{grid-template-columns:1fr}}
+.script-tabs{display:flex;gap:4px}.script-tab{padding:6px 9px;font:700 11px/1 Consolas,monospace}.script-tab.active{color:#10150b;border-color:var(--lime);background:var(--lime)}
 </style>
 </head>
 <body>
 <main class="app">
-<header><div><div class="kicker">MX Creative Console / Script Lab</div><h1>Make a tiny game.</h1></div><div class="connection"><span class="dot" id="connection-dot"></span><span id="connection-label">Disconnected</span><button id="connect" class="primary" type="button">Connect keypad</button></div></header>
+<header><div><div class="kicker">MX Keypad / Script Lab</div><h1>Make a tiny game</h1></div><div class="connection"><span class="dot" id="connection-dot"></span><span id="connection-label">Disconnected</span><button id="connect" class="primary" type="button">Connect keypad</button></div></header>
 <div class="workspace">
-<section class="panel"><div class="panel-head"><span class="label">game.js</span><div class="tools"><button id="run" class="primary" type="button">Run</button><button id="stop" class="danger" type="button" disabled>Stop</button><button id="save" type="button">Save</button><button id="load" type="button">Load</button></div></div><div class="editor-wrap"><textarea id="editor" spellcheck="false" aria-label="JavaScript game editor"></textarea></div><div class="hint">Worker and browser frames at 30 Hz · console updates at 30 Hz · keys: 1–9, PREV, NEXT</div></section>
+<section class="panel"><div class="panel-head"><div class="script-tabs" role="tablist" aria-label="Scripts"><button class="script-tab active" data-script="starter" type="button" role="tab" aria-selected="true">Starter</button><button class="script-tab" data-script="spaceInvaders" type="button" role="tab" aria-selected="false">Space Invaders</button></div><div class="tools"><button id="run" class="primary" type="button">Run</button><button id="stop" class="danger" type="button" disabled>Stop</button><button id="save" type="button">Save</button><button id="load" type="button">Load</button></div></div><div class="editor-wrap"><textarea id="editor" spellcheck="false" aria-label="JavaScript game editor"></textarea></div><div class="hint">Worker and browser frames at 30 Hz · console updates at 30 Hz · keys: 1–9, PREV, NEXT</div></section>
 <aside class="side"><section class="panel section"><h2>Keypad preview</h2><div class="emulator" id="emulator"></div><div class="aux"><button id="prev" type="button">PREV</button><button id="next" type="button">NEXT</button></div></section><section class="panel section"><h2>Runtime</h2><div id="status" role="status" aria-live="polite">Ready. Run a script or connect a keypad.</div></section><section class="panel section"><h2>Script API</h2><p class="api"><code>init(state)</code><br><code>update(dt, input, state)</code><br><code>draw(display, state)</code><br><br><code>display.keys[0].fill('#101820')</code><br><code>display.keys[4].fillRect(x,y,w,h,'#b8ee54')</code><br><code>input.isDown(5)</code><br><code>input.isPressed('NEXT')</code></p></section></aside>
 </div>
 </main>
 <script type="module">
 import { MXCreativeConsoleClient } from '../js/mx-creative-console.min.mjs';
 const editor=document.querySelector('#editor'),status=document.querySelector('#status'),connectButton=document.querySelector('#connect'),runButton=document.querySelector('#run'),stopButton=document.querySelector('#stop'),dot=document.querySelector('#connection-dot'),connectionLabel=document.querySelector('#connection-label');
-const REFRESH_RATE_HZ=30,REFRESH_INTERVAL_MS=1000/REFRESH_RATE_HZ,HARDWARE_INTERVAL_MS=1000/10,keyCanvases=[],keyElements=[],frameSignatures=Array(9).fill(null),pendingUploads=new Set(),inputState={down:new Set(),pressed:new Set()};let worker=null,connected=false,uploadRunning=false,lastHardwareUpload=0,keypadIndexBase=1;const client=new MXCreativeConsoleClient();
+const REFRESH_RATE_HZ=10,REFRESH_INTERVAL_MS=1000/REFRESH_RATE_HZ,HARDWARE_INTERVAL_MS=1000/10,keyCanvases=[],keyElements=[],frameSignatures=Array(9).fill(null),pendingUploads=new Set(),inputState={down:new Set(),pressed:new Set()};let worker=null,connected=false,uploadRunning=false,lastHardwareUpload=0,keypadIndexBase=1;const client=new MXCreativeConsoleClient();
 const starter=`function init(state) {
   state.x = 54;
   state.y = 54;
@@ -37,7 +38,96 @@ function update(dt, input, state) {
 function draw(display, state) {
   display.keys.forEach((key) => key.fill('#101820'));
   display.keys[4].fillRect(state.x, state.y, 10, 10, '#b8ee54');
-}`;editor.value=starter;
+}`;
+const spaceInvaders=`// Space Invaders uses the entire 3x3 keypad as one 354 x 354 pixel screen.
+// Controls: hold 3 or 5 to move; press 1 to fire; PREV or NEXT restarts after a loss.
+const SCREEN_SIZE = 354;
+
+function init(state) {
+  // Keep every value in state: the worker preserves it between update and draw calls.
+  state.playerX = SCREEN_SIZE / 2;
+  state.bullets = [];
+  state.invaders = [];
+  state.direction = 1;
+  state.score = 0;
+  state.gameOver = false;
+
+  // Build a five-by-six formation. Each invader is an independent collision target.
+  for (let row = 0; row < 5; row += 1) {
+    for (let column = 0; column < 6; column += 1) {
+      state.invaders.push({ x: 38 + column * 52, y: 34 + row * 31 });
+    }
+  }
+}
+
+function update(dt, input, state) {
+  if (state.gameOver) {
+    if (input.isPressed('PREV') || input.isPressed('NEXT')) init(state);
+    return;
+  }
+
+  // Input uses zero-based keypad indices: 3 is the left-middle key and 5 the right-middle key.
+  if (input.isDown(3)) state.playerX -= 185 * dt;
+  if (input.isDown(5)) state.playerX += 185 * dt;
+  state.playerX = Math.max(15, Math.min(SCREEN_SIZE - 15, state.playerX));
+
+  // A press, unlike isDown, adds exactly one bullet even when the key is held.
+  if (input.isPressed(1) && state.bullets.length < 3) {
+    state.bullets.push({ x: state.playerX, y: SCREEN_SIZE - 39 });
+  }
+  state.bullets.forEach((bullet) => { bullet.y -= 270 * dt; });
+  state.bullets = state.bullets.filter((bullet) => bullet.y > -8);
+
+  // The formation reverses and descends as a group at either screen edge.
+  const speed = 24 + (30 - state.invaders.length) * 1.7;
+  state.invaders.forEach((invader) => { invader.x += state.direction * speed * dt; });
+  const edge = state.invaders.some((invader) => invader.x < 12 || invader.x > SCREEN_SIZE - 28);
+  if (edge) {
+    state.direction *= -1;
+    state.invaders.forEach((invader) => { invader.y += 12; });
+  }
+
+  // Remove an invader and its bullet when their small hit boxes overlap.
+  state.bullets = state.bullets.filter((bullet) => {
+    const hit = state.invaders.findIndex((invader) => Math.abs(bullet.x - invader.x - 10) < 13 && Math.abs(bullet.y - invader.y - 8) < 12);
+    if (hit < 0) return true;
+    state.invaders.splice(hit, 1);
+    state.score += 10;
+    return false;
+  });
+  if (!state.invaders.length || state.invaders.some((invader) => invader.y > SCREEN_SIZE - 66)) state.gameOver = true;
+}
+
+// Convert one global rectangle into clipped rectangles on the nine physical key screens.
+function rect(display, x, y, width, height, color) {
+  for (let row = 0; row < 3; row += 1) for (let column = 0; column < 3; column += 1) {
+    const left = column * 118, top = row * 118;
+    const clippedLeft = Math.max(x, left), clippedTop = Math.max(y, top);
+    const clippedRight = Math.min(x + width, left + 118), clippedBottom = Math.min(y + height, top + 118);
+    if (clippedLeft < clippedRight && clippedTop < clippedBottom) {
+      display.keys[row * 3 + column].fillRect(clippedLeft - left, clippedTop - top, clippedRight - clippedLeft, clippedBottom - clippedTop, color);
+    }
+  }
+}
+
+function draw(display, state) {
+  display.keys.forEach((key) => key.fill('#060b18'));
+  // Sparse stars make the joined displays read as one small arcade screen.
+  for (let star = 0; star < 22; star += 1) rect(display, (star * 47) % SCREEN_SIZE, (star * 79) % SCREEN_SIZE, 2, 2, '#29405f');
+  state.invaders.forEach((invader) => {
+    rect(display, invader.x, invader.y, 20, 13, '#b8ee54');
+    rect(display, invader.x + 4, invader.y - 3, 12, 3, '#b8ee54');
+  });
+  state.bullets.forEach((bullet) => rect(display, bullet.x - 2, bullet.y, 4, 9, '#ffdf6b'));
+  rect(display, state.playerX - 15, SCREEN_SIZE - 26, 30, 7, '#62d8ff');
+  rect(display, state.playerX - 5, SCREEN_SIZE - 33, 10, 8, '#62d8ff');
+  // A red bar is a hardware-friendly game-over signal; PREV/NEXT starts a new formation.
+  if (state.gameOver) rect(display, 35, 165, SCREEN_SIZE - 70, 24, '#ff776d');
+}`;
+const scripts={starter,spaceInvaders};
+function selectScript(name){editor.value=scripts[name];document.querySelectorAll('.script-tab').forEach((tab)=>{const selected=tab.dataset.script===name;tab.classList.toggle('active',selected);tab.setAttribute('aria-selected',String(selected))})}
+document.querySelectorAll('.script-tab').forEach((tab)=>tab.addEventListener('click',()=>selectScript(tab.dataset.script)));
+selectScript('starter');
 for(let index=0;index<9;index+=1){const element=document.createElement('div');element.className='key-screen';const canvas=document.createElement('canvas');canvas.width=118;canvas.height=118;const label=document.createElement('span');label.className='key-number';label.textContent=index;element.append(canvas,label);document.querySelector('#emulator').append(element);keyCanvases.push(canvas);keyElements.push(element)}
 function setStatus(message,error=false){status.textContent=message;status.classList.toggle('error',error)}
 function setPressed(ids){if(ids.includes(0))keypadIndexBase=0;else if(ids.includes(9))keypadIndexBase=1;const mapping=new Map([...Array(9)].map((_,index)=>[index+keypadIndexBase,index]).concat([[0x01a1,'PREV'],[0x01a2,'NEXT']]));const next=new Set(ids.map((id)=>mapping.get(id)).filter((value)=>value!==undefined));inputState.pressed=new Set([...next].filter((value)=>!inputState.down.has(value)));inputState.down=next;keyElements.forEach((element,index)=>element.classList.toggle('active',next.has(index)));document.querySelector('#prev').classList.toggle('active',next.has('PREV'));document.querySelector('#next').classList.toggle('active',next.has('NEXT'))}
