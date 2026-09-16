@@ -13,8 +13,8 @@
 <main class="app">
 <header><div><div class="kicker">MX Keypad / Script Lab</div><h1>Make a tiny game</h1></div><div class="connection"><span class="dot" id="connection-dot"></span><span id="connection-label">Disconnected</span><button id="connect" class="primary" type="button">Connect keypad</button></div></header>
 <div class="workspace">
-<section class="panel"><div class="panel-head"><div class="script-tabs" role="tablist" aria-label="Scripts"><button class="script-tab active" data-script="starter" type="button" role="tab" aria-selected="true">Starter</button><button class="script-tab" data-script="spaceInvaders" type="button" role="tab" aria-selected="false">Space Invaders</button></div><div class="tools"><button id="run" class="primary" type="button">Run</button><button id="stop" class="danger" type="button" disabled>Stop</button><button id="save" type="button">Save</button><button id="load" type="button">Load</button></div></div><div class="editor-wrap"><textarea id="editor" spellcheck="false" aria-label="JavaScript game editor"></textarea></div><div class="hint">Worker and browser frames at 10 Hz, matched to the keypad's upload limit · keys: 0–8, PREV, NEXT</div></section>
-<aside class="side"><section class="panel section"><h2>Keypad preview</h2><div class="emulator" id="emulator"></div><div class="aux"><button id="prev" type="button">PREV</button><button id="next" type="button">NEXT</button></div></section><section class="panel section"><h2>Runtime</h2><div id="status" role="status" aria-live="polite">Ready. Run a script or connect a keypad.</div></section><section class="panel section"><h2>Script API</h2><p class="api"><code>init(state)</code><br><code>update(dt, input, state)</code><br><code>draw(display, state)</code><br><br><code>display.keys[0].fill('#101820')</code><br><code>display.keys[4].fillRect(x,y,w,h,'#b8ee54')</code><br><code>input.isDown(5)</code><br><code>input.isPressed('NEXT')</code></p></section></aside>
+<section class="panel"><div class="panel-head"><div class="script-tabs" role="tablist" aria-label="Scripts"><button class="script-tab active" data-script="starter" type="button" role="tab" aria-selected="true">Starter</button><button class="script-tab" data-script="spaceInvaders" type="button" role="tab" aria-selected="false">Space Invaders</button><button class="script-tab" data-script="weather" type="button" role="tab" aria-selected="false">Weather</button></div><div class="tools"><button id="run" class="primary" type="button">Run</button><button id="stop" class="danger" type="button" disabled>Stop</button><button id="save" type="button">Save</button><button id="load" type="button">Load</button></div></div><div class="editor-wrap"><textarea id="editor" spellcheck="false" aria-label="JavaScript game editor"></textarea></div><div class="hint">Worker and browser frames at 10 Hz, matched to the keypad's upload limit · keys: 0–8, PREV, NEXT</div></section>
+<aside class="side"><section class="panel section"><h2>Keypad preview</h2><div class="emulator" id="emulator"></div><div class="aux"><button id="prev" type="button">PREV</button><button id="next" type="button">NEXT</button></div></section><section class="panel section"><h2>Runtime</h2><div id="status" role="status" aria-live="polite">Ready. Run a script or connect a keypad.</div></section><section class="panel section"><h2>Script API</h2><p class="api"><code>init(state)</code><br><code>update(dt, input, state)</code><br><code>draw(display, state)</code><br><br><code>display.keys[0].fill('#101820')</code><br><code>display.keys[4].fillRect(x,y,w,h,'#b8ee54')</code><br><code>display.keys[4].fillCircle(x,y,r,'#b8ee54')</code><br><code>display.keys[4].arc(x,y,r,start,end,'#b8ee54')</code><br><code>display.keys[4].fillText('18°C',x,y,'#fff',16)</code><br><code>display.keys[4].drawBitmap(rows,x,y,px,'#fff')</code><br><br><code>input.isDown(5)</code><br><code>input.isPressed('NEXT')</code><br><br><code>fetch(url)</code> and <code>getLocation()</code> are available inside scripts.</p></section></aside>
 </div>
 </main>
 <script type="module">
@@ -130,7 +130,160 @@ function draw(display, state) {
   // A red bar is a hardware-friendly game-over signal; only PREV starts a new formation.
   if (state.gameOver) rect(display, 35, 165, SCREEN_SIZE - 70, 24, '#ff776d');
 }`;
-const scripts={starter,spaceInvaders};
+const weather=`// Weather dashboard: fetches conditions for your current location from Open-Meteo
+// (https://open-meteo.com), a free API that needs no key, and renders them across the
+// keypad using the fillCircle, arc, fillText, and drawBitmap primitives. Press PREV at
+// any time to force an immediate refresh instead of waiting for the countdown ring.
+
+const REFRESH_SECONDS = 600; // auto-refresh every 10 minutes
+
+// Small pixel-art bitmaps. Each string is one row; '1' draws a filled pixelSize square.
+const CLOUD_BITMAP = [
+  '00011100000',
+  '00111110000',
+  '01111111000',
+  '11111111110',
+  '11111111110'
+];
+const BOLT_BITMAP = [
+  '00110',
+  '01100',
+  '11110',
+  '00110',
+  '01100',
+  '11000',
+  '01000'
+];
+
+function init(state) {
+  state.status = 'locating'; // 'locating' | 'loading' | 'ready' | 'error'
+  state.error = null;
+  state.weather = null;
+  state.secondsUntilRefresh = REFRESH_SECONDS;
+  state.forceRefresh = false;
+  void refresh(state); // kick off the very first fetch; update() only handles later ones
+}
+
+// Maps Open-Meteo's WMO weather codes to one of six simple icon categories.
+// See https://open-meteo.com/en/docs for the full code table.
+function categorize(code) {
+  if (code === 0) return 'clear';
+  if (code === 1 || code === 2) return 'partly-cloudy';
+  if (code === 3) return 'clouds';
+  if (code === 45 || code === 48) return 'fog';
+  if (code >= 51 && code <= 67) return 'rain';
+  if (code >= 71 && code <= 86 && code !== 80 && code !== 81 && code !== 82) return 'snow';
+  if (code >= 80 && code <= 82) return 'rain';
+  if (code >= 95) return 'storm';
+  return 'clouds';
+}
+
+// getLocation() and fetch() are host-provided globals; both return Promises.
+async function refresh(state) {
+  try {
+    state.status = 'locating';
+    const position = await getLocation();
+    state.status = 'loading';
+    const url = 'https://api.open-meteo.com/v1/forecast?latitude=' + position.latitude
+      + '&longitude=' + position.longitude + '&current_weather=true&timezone=auto';
+    const response = await fetch(url);
+    if (!response.ok) throw new Error('Weather API ' + response.status);
+    const data = await response.json();
+    state.weather = data.current_weather;
+    state.status = 'ready';
+    state.error = null;
+  } catch (error) {
+    // Surface the failure on state instead of throwing, since init()/update() never await refresh().
+    state.status = 'error';
+    state.error = error.message;
+  }
+}
+
+function update(dt, input, state) {
+  // A single PREV press jumps straight to a fresh fetch, bypassing the countdown.
+  if (input.isPressed('PREV')) state.forceRefresh = true;
+
+  if (state.status === 'locating' || state.status === 'loading') return; // a fetch is already in flight
+
+  state.secondsUntilRefresh -= dt;
+  if (state.forceRefresh || state.secondsUntilRefresh <= 0) {
+    state.forceRefresh = false;
+    state.secondsUntilRefresh = REFRESH_SECONDS;
+    void refresh(state); // fire-and-forget; refresh() mutates state when it settles
+  }
+}
+
+// A filled core circle plus four cardinal and four diagonal rays, all on the center key.
+function drawSun(display) {
+  display.keys[4].fillCircle(59, 46, 16, '#ffd166');
+  display.keys[4].fillRect(55, 18, 8, 10, '#ffd166');
+  display.keys[4].fillRect(55, 64, 8, 10, '#ffd166');
+  display.keys[4].fillRect(31, 42, 10, 8, '#ffd166');
+  display.keys[4].fillRect(77, 42, 10, 8, '#ffd166');
+  display.keys[4].fillRect(38, 25, 7, 7, '#ffd166');
+  display.keys[4].fillRect(73, 25, 7, 7, '#ffd166');
+  display.keys[4].fillRect(38, 64, 7, 7, '#ffd166');
+  display.keys[4].fillRect(73, 64, 7, 7, '#ffd166');
+}
+
+function drawCloud(display, x, y, color) {
+  display.keys[4].drawBitmap(CLOUD_BITMAP, x, y, 6, color);
+}
+
+function drawIcon(display, category) {
+  if (category === 'clear') {
+    drawSun(display);
+  } else if (category === 'partly-cloudy') {
+    drawSun(display);
+    drawCloud(display, 24, 46, '#c9d3d6');
+  } else if (category === 'clouds' || category === 'fog') {
+    drawCloud(display, 20, 40, '#c9d3d6');
+  } else if (category === 'rain') {
+    drawCloud(display, 20, 30, '#8fa3ab');
+    display.keys[4].fillCircle(32, 78, 3, '#62d8ff');
+    display.keys[4].fillCircle(52, 84, 3, '#62d8ff');
+    display.keys[4].fillCircle(72, 78, 3, '#62d8ff');
+  } else if (category === 'snow') {
+    drawCloud(display, 20, 30, '#8fa3ab');
+    display.keys[4].fillCircle(32, 78, 3, '#f4f0e8');
+    display.keys[4].fillCircle(52, 84, 3, '#f4f0e8');
+    display.keys[4].fillCircle(72, 78, 3, '#f4f0e8');
+  } else if (category === 'storm') {
+    drawCloud(display, 20, 26, '#6b7680');
+    display.keys[4].drawBitmap(BOLT_BITMAP, 50, 60, 5, '#ffd166');
+  }
+}
+
+function draw(display, state) {
+  // A calm slate background frames the dashboard on every key.
+  display.keys.forEach((key) => key.fill('#0d1117'));
+
+  if (state.status === 'locating' || state.status === 'loading') {
+    display.keys[4].fillText(state.status === 'locating' ? 'Locating...' : 'Loading...', 14, 52, '#9ea6a8', 13);
+    return;
+  }
+  if (state.status === 'error') {
+    display.keys[4].fillText('Error', 38, 42, '#ff776d', 16);
+    display.keys[4].fillText(String(state.error).slice(0, 16), 6, 64, '#ff776d', 10);
+    return;
+  }
+
+  const category = categorize(state.weather.weathercode);
+  drawIcon(display, category);
+
+  // A pie-slice ring around the icon drains as the next auto-refresh approaches.
+  const progress = 1 - state.secondsUntilRefresh / REFRESH_SECONDS;
+  const endAngle = -Math.PI / 2 + progress * Math.PI * 2;
+  display.keys[4].arc(59, 46, 44, -Math.PI / 2, endAngle, 'rgba(184,238,84,0.18)');
+
+  // A tiny status dot: green after a healthy fetch, red if the last attempt failed.
+  display.keys[4].fillCircle(106, 12, 4, state.error ? '#ff776d' : '#b8ee54');
+
+  display.keys[4].fillText(Math.round(state.weather.temperature) + '\u00b0C', 18, 82, '#f4f0e8', 20);
+  display.keys[4].fillText(category.replace('-', ' '), 6, 13, '#f4f0e8', 13);
+  display.keys[4].fillText(Math.round(state.weather.windspeed) + ' km/h wind', 6, 106, '#9ea6a8', 12);
+}`;
+const scripts={starter,spaceInvaders,weather};
 function selectScript(name){editor.value=scripts[name];document.querySelectorAll('.script-tab').forEach((tab)=>{const selected=tab.dataset.script===name;tab.classList.toggle('active',selected);tab.setAttribute('aria-selected',String(selected))})}
 document.querySelectorAll('.script-tab').forEach((tab)=>tab.addEventListener('click',()=>selectScript(tab.dataset.script)));
 selectScript('starter');
@@ -139,11 +292,15 @@ function setStatus(message,error=false){status.textContent=message;status.classL
 function setPressed(ids){if(ids.includes(0))keypadIndexBase=0;else if(ids.includes(9))keypadIndexBase=1;const mapping=new Map([...Array(9)].map((_,index)=>[index+keypadIndexBase,index]).concat([[0x01a1,'PREV'],[0x01a2,'NEXT']]));const next=new Set(ids.map((id)=>mapping.get(id)).filter((value)=>value!==undefined));inputState.pressed=new Set([...next].filter((value)=>!inputState.down.has(value)));inputState.down=next;keyElements.forEach((element,index)=>element.classList.toggle('active',next.has(index)));document.querySelector('#prev').classList.toggle('active',next.has('PREV'));document.querySelector('#next').classList.toggle('active',next.has('NEXT'))}
 function resetInput(){setPressed([])}
 function useInput(){const down=new Set(inputState.down),pressed=new Set(inputState.pressed);inputState.pressed.clear();return{down:[...down],pressed:[...pressed]}}
-function renderFrames(frames){const changed=[];frames.forEach((commands,index)=>{const signature=JSON.stringify(commands);if(signature===frameSignatures[index])return;frameSignatures[index]=signature;changed.push(index);const context=keyCanvases[index].getContext('2d');commands.forEach((command)=>{if(command.type==='fill'){context.fillStyle=command.color;context.fillRect(0,0,118,118)}if(command.type==='rect'){context.fillStyle=command.color;context.fillRect(command.x,command.y,command.width,command.height)}})});return changed}
+function renderFrames(frames){const changed=[];frames.forEach((commands,index)=>{const signature=JSON.stringify(commands);if(signature===frameSignatures[index])return;frameSignatures[index]=signature;changed.push(index);const context=keyCanvases[index].getContext('2d');commands.forEach((command)=>{if(command.type==='fill'){context.fillStyle=command.color;context.fillRect(0,0,118,118)}else if(command.type==='rect'){context.fillStyle=command.color;context.fillRect(command.x,command.y,command.width,command.height)}else if(command.type==='circle'){context.fillStyle=command.color;context.beginPath();context.arc(command.x,command.y,command.radius,0,Math.PI*2);context.fill()}else if(command.type==='arc'){context.fillStyle=command.color;context.beginPath();context.moveTo(command.x,command.y);context.arc(command.x,command.y,command.radius,command.startAngle,command.endAngle);context.closePath();context.fill()}else if(command.type==='text'){context.fillStyle=command.color;context.font=`700 ${command.size}px Consolas, monospace`;context.textBaseline='top';context.fillText(command.text,command.x,command.y)}else if(command.type==='bitmap'){context.fillStyle=command.color;command.pattern.forEach((row,rowIndex)=>{for(let column=0;column<row.length;column+=1){if(row[column]==='1')context.fillRect(command.x+column*command.pixelSize,command.y+rowIndex*command.pixelSize,command.pixelSize,command.pixelSize)}})}})});return changed}
 function queueUploads(indices){if(!connected)return;indices.forEach((index)=>pendingUploads.add(index));if(!uploadRunning)void drainUploads()}
 async function drainUploads(){uploadRunning=true;try{while(connected&&pendingUploads.size){const[index]=pendingUploads;pendingUploads.delete(index);const delay=HARDWARE_INTERVAL_MS-(performance.now()-lastHardwareUpload);if(delay>0)await new Promise((resolve)=>setTimeout(resolve,delay));if(!connected)break;const blob=await new Promise((resolve,reject)=>keyCanvases[index].toBlob((value)=>value?resolve(value):reject(new Error('Could not encode key image.')),'image/jpeg',.82));await client.uploadContextualDisplayImage(new File([blob],`key-${index+1}.jpg`,{type:'image/jpeg'}),{mode:'single',keyNumber:index+1});lastHardwareUpload=performance.now()}}catch(error){pendingUploads.clear();setStatus(error.message,true)}finally{uploadRunning=false;if(connected&&pendingUploads.size)void drainUploads()}}
-function startWorker(){stopWorker();const workerBody=function(){const REFRESH_INTERVAL_MS=1000/10;let game=null,state={},last=performance.now(),nextRender=0;self.onmessage=(event)=>{if(event.data.type==='start'){try{game={};new Function('game',event.data.code+'\n;game.init=typeof init===\"function\"?init:null;game.update=typeof update===\"function\"?update:null;game.draw=typeof draw===\"function\"?draw:null;')(game);state={};game.init?.(state);self.postMessage({type:'status',message:'Running'});tick()}catch(error){self.postMessage({type:'error',message:error.message})}}else if(event.data.type==='input')game&&(game.input=event.data.input);else if(event.data.type==='stop')close()};function tick(){if(!game)return;const now=performance.now(),dt=Math.min((now-last)/1000,.1);last=now;const current=game.input||{down:[],pressed:[]},input={isDown:(key)=>current.down.includes(key),isPressed:(key)=>current.pressed.includes(key)};try{game.update?.(dt,input,state);if(now>=nextRender){const frames=[...Array(9)].map(()=>[]),display={keys:frames.map((commands)=>({fill:(color)=>commands.push({type:'fill',color}),fillRect:(x,y,width,height,color)=>commands.push({type:'rect',x,y,width,height,color})}))};game.draw?.(display,state);self.postMessage({type:'frame',frames});nextRender=now+REFRESH_INTERVAL_MS}setTimeout(tick,REFRESH_INTERVAL_MS)}catch(error){self.postMessage({type:'error',message:error.message})}}};
-const source=`(${workerBody.toString()})();`;worker=new Worker(URL.createObjectURL(new Blob([source],{type:'text/javascript'})));worker.onmessage=({data})=>{if(data.type==='frame')queueUploads(renderFrames(data.frames));if(data.type==='status')setStatus(data.message);if(data.type==='error'){setStatus(data.message,true);stopWorker()}};worker.postMessage({type:'start',code:editor.value});runButton.disabled=true;stopButton.disabled=false}
+function startWorker(){stopWorker();const workerBody=function(){const REFRESH_INTERVAL_MS=1000/10;let game=null,state={},last=performance.now(),nextRender=0;
+// navigator.geolocation only exists on the main thread, so getLocation() forwards the
+// request to the page via postMessage and resolves once a matching 'geo-response' arrives.
+let geoRequestSeq=0;const geoRequests=new Map();self.getLocation=()=>new Promise((resolve,reject)=>{const id=++geoRequestSeq;geoRequests.set(id,{resolve,reject});self.postMessage({type:'geo-request',id})});
+self.onmessage=(event)=>{if(event.data.type==='start'){try{game={};new Function('game',event.data.code+'\n;game.init=typeof init===\"function\"?init:null;game.update=typeof update===\"function\"?update:null;game.draw=typeof draw===\"function\"?draw:null;')(game);state={};game.init?.(state);self.postMessage({type:'status',message:'Running'});tick()}catch(error){self.postMessage({type:'error',message:error.message})}}else if(event.data.type==='input')game&&(game.input=event.data.input);else if(event.data.type==='geo-response'){const pending=geoRequests.get(event.data.id);if(pending){geoRequests.delete(event.data.id);if(event.data.error)pending.reject(new Error(event.data.error));else pending.resolve(event.data.coords)}}else if(event.data.type==='stop')close()};function tick(){if(!game)return;const now=performance.now(),dt=Math.min((now-last)/1000,.1);last=now;const current=game.input||{down:[],pressed:[]},input={isDown:(key)=>current.down.includes(key),isPressed:(key)=>current.pressed.includes(key)};try{game.update?.(dt,input,state);if(now>=nextRender){const frames=[...Array(9)].map(()=>[]),display={keys:frames.map((commands)=>({fill:(color)=>commands.push({type:'fill',color}),fillRect:(x,y,width,height,color)=>commands.push({type:'rect',x,y,width,height,color}),fillCircle:(x,y,radius,color)=>commands.push({type:'circle',x,y,radius,color}),arc:(x,y,radius,startAngle,endAngle,color)=>commands.push({type:'arc',x,y,radius,startAngle,endAngle,color}),fillText:(text,x,y,color,size)=>commands.push({type:'text',text,x,y,color,size:size||12}),drawBitmap:(pattern,x,y,pixelSize,color)=>commands.push({type:'bitmap',pattern,x,y,pixelSize,color})}))};game.draw?.(display,state);self.postMessage({type:'frame',frames});nextRender=now+REFRESH_INTERVAL_MS}setTimeout(tick,REFRESH_INTERVAL_MS)}catch(error){self.postMessage({type:'error',message:error.message})}}};
+const source=`(${workerBody.toString()})();`;worker=new Worker(URL.createObjectURL(new Blob([source],{type:'text/javascript'})));worker.onmessage=({data})=>{if(data.type==='frame')queueUploads(renderFrames(data.frames));if(data.type==='status')setStatus(data.message);if(data.type==='error'){setStatus(data.message,true);stopWorker()}if(data.type==='geo-request'){if(!('geolocation'in navigator)){worker.postMessage({type:'geo-response',id:data.id,error:'Geolocation is unavailable in this browser.'});return}navigator.geolocation.getCurrentPosition((position)=>worker.postMessage({type:'geo-response',id:data.id,coords:{latitude:position.coords.latitude,longitude:position.coords.longitude}}),(error)=>worker.postMessage({type:'geo-response',id:data.id,error:error.message}),{enableHighAccuracy:false,timeout:10000,maximumAge:300000})}};worker.postMessage({type:'start',code:editor.value});runButton.disabled=true;stopButton.disabled=false}
 function stopWorker(){worker?.terminate();worker=null;pendingUploads.clear();resetInput();runButton.disabled=false;stopButton.disabled=true}
 setInterval(()=>worker?.postMessage({type:'input',input:useInput()}),REFRESH_INTERVAL_MS);
 client.on('status',({message,isError})=>setStatus(message,isError));client.on('keypadKeysChanged',({activeControlIds})=>setPressed(activeControlIds));
