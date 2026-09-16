@@ -2,6 +2,10 @@
 
 The interactive game scripting workbench is in [index.html](./index.html). It loads the packaged WebHID client, runs user JavaScript in a Web Worker, mirrors display commands to a 3x3 keypad emulator, and can upload serialized frames to an attached MX Creative Keypad.
 
+## Disclaimer
+
+This is an experimental project, it is not officially supported by Logitech.
+
 ## Run locally
 
 Serve the repository over HTTP rather than opening the HTML file directly. The server must serve `.mjs` files with a JavaScript MIME type.
@@ -10,7 +14,7 @@ Serve the repository over HTTP rather than opening the HTML file directly. The s
 python -c "import http.server,mimetypes; mimetypes.add_type('text/javascript','.mjs'); http.server.test(HandlerClass=http.server.SimpleHTTPRequestHandler,port=8000)"
 ```
 
-Open `http://localhost:8000/test/index.html` in Chrome or Edge. WebHID connection and File System Access prompts require a user gesture. The Save and Load buttons use the native file picker when available and fall back to browser downloads/uploads.
+Open `http://localhost:8000` in Chrome or Edge. WebHID connection and File System Access prompts require a user gesture. The Save and Load buttons use the native file picker when available and fall back to browser downloads/uploads.
 
 ## Sample scripts
 
