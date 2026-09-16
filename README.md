@@ -1,6 +1,6 @@
 # MX Creative Console Script Lab
 
-The interactive game scripting workbench is in [test/index.html](test/index.html). It loads the packaged WebHID client, runs user JavaScript in a Web Worker, mirrors display commands to a 3x3 keypad emulator, and can upload serialized frames to an attached MX Creative Keypad.
+The interactive game scripting workbench is in [index.html](./index.html). It loads the packaged WebHID client, runs user JavaScript in a Web Worker, mirrors display commands to a 3x3 keypad emulator, and can upload serialized frames to an attached MX Creative Keypad.
 
 ## Run locally
 
@@ -49,5 +49,3 @@ Coordinates are local to each 118x118 key canvas.
 ## Network and location access
 
 Scripts run inside a real Web Worker, so `fetch(url)` works directly for calling external HTTP APIs (subject to the target's CORS policy). `navigator.geolocation` is not available inside a Worker, so the engine exposes a `getLocation()` global instead: it forwards the request to the host page, which calls `navigator.geolocation.getCurrentPosition` and returns `{ latitude, longitude }` back to the script. Both `fetch` and `getLocation()` return Promises; since `init`/`update`/`draw` are never awaited by the engine, wrap asynchronous work in `try`/`catch` and store results or errors on `state` for `draw` to render, as the Weather script does.
-
-
