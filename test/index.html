@@ -13,14 +13,14 @@
 <main class="app">
 <header><div><div class="kicker">MX Keypad / Script Lab</div><h1>Make a tiny game</h1></div><div class="connection"><span class="dot" id="connection-dot"></span><span id="connection-label">Disconnected</span><button id="connect" class="primary" type="button">Connect keypad</button></div></header>
 <div class="workspace">
-<section class="panel"><div class="panel-head"><div class="script-tabs" role="tablist" aria-label="Scripts"><button class="script-tab active" data-script="starter" type="button" role="tab" aria-selected="true">Starter</button><button class="script-tab" data-script="spaceInvaders" type="button" role="tab" aria-selected="false">Space Invaders</button></div><div class="tools"><button id="run" class="primary" type="button">Run</button><button id="stop" class="danger" type="button" disabled>Stop</button><button id="save" type="button">Save</button><button id="load" type="button">Load</button></div></div><div class="editor-wrap"><textarea id="editor" spellcheck="false" aria-label="JavaScript game editor"></textarea></div><div class="hint">Worker and browser frames at 30 Hz · console updates at 30 Hz · keys: 1–9, PREV, NEXT</div></section>
+<section class="panel"><div class="panel-head"><div class="script-tabs" role="tablist" aria-label="Scripts"><button class="script-tab active" data-script="starter" type="button" role="tab" aria-selected="true">Starter</button><button class="script-tab" data-script="spaceInvaders" type="button" role="tab" aria-selected="false">Space Invaders</button></div><div class="tools"><button id="run" class="primary" type="button">Run</button><button id="stop" class="danger" type="button" disabled>Stop</button><button id="save" type="button">Save</button><button id="load" type="button">Load</button></div></div><div class="editor-wrap"><textarea id="editor" spellcheck="false" aria-label="JavaScript game editor"></textarea></div><div class="hint">Worker and browser frames at 10 Hz, matched to the keypad's upload limit · keys: 1–9, PREV, NEXT</div></section>
 <aside class="side"><section class="panel section"><h2>Keypad preview</h2><div class="emulator" id="emulator"></div><div class="aux"><button id="prev" type="button">PREV</button><button id="next" type="button">NEXT</button></div></section><section class="panel section"><h2>Runtime</h2><div id="status" role="status" aria-live="polite">Ready. Run a script or connect a keypad.</div></section><section class="panel section"><h2>Script API</h2><p class="api"><code>init(state)</code><br><code>update(dt, input, state)</code><br><code>draw(display, state)</code><br><br><code>display.keys[0].fill('#101820')</code><br><code>display.keys[4].fillRect(x,y,w,h,'#b8ee54')</code><br><code>input.isDown(5)</code><br><code>input.isPressed('NEXT')</code></p></section></aside>
 </div>
 </main>
 <script type="module">
 import { MXCreativeConsoleClient } from '../js/mx-creative-console.min.mjs';
 const editor=document.querySelector('#editor'),status=document.querySelector('#status'),connectButton=document.querySelector('#connect'),runButton=document.querySelector('#run'),stopButton=document.querySelector('#stop'),dot=document.querySelector('#connection-dot'),connectionLabel=document.querySelector('#connection-label');
-const REFRESH_RATE_HZ=30,REFRESH_INTERVAL_MS=1000/REFRESH_RATE_HZ,HARDWARE_INTERVAL_MS=1000/30,keyCanvases=[],keyElements=[],frameSignatures=Array(9).fill(null),pendingUploads=new Set(),inputState={down:new Set(),pressed:new Set()};let worker=null,connected=false,uploadRunning=false,lastHardwareUpload=0,keypadIndexBase=1;const client=new MXCreativeConsoleClient();
+const REFRESH_RATE_HZ=10,REFRESH_INTERVAL_MS=1000/REFRESH_RATE_HZ,HARDWARE_INTERVAL_MS=1000/10,keyCanvases=[],keyElements=[],frameSignatures=Array(9).fill(null),pendingUploads=new Set(),inputState={down:new Set(),pressed:new Set()};let worker=null,connected=false,uploadRunning=false,lastHardwareUpload=0,keypadIndexBase=1;const client=new MXCreativeConsoleClient();
 const starter=`function init(state) {
   state.x = 54;
   state.y = 54;
@@ -40,8 +40,11 @@ function draw(display, state) {
   display.keys[4].fillRect(state.x, state.y, 10, 10, '#b8ee54');
 }`;
 const spaceInvaders=`// Space Invaders uses the entire 3x3 keypad as one 354 x 354 pixel screen.
-// Controls: hold 3 or 5 to move; press 1 to fire; PREV or NEXT restarts after a loss.
+// Controls: hold 6 or 8 to move left/right; press NEXT to fire; PREV restarts after a loss.
 const SCREEN_SIZE = 354;
+// Game logic and hardware uploads both tick at 10 Hz (see REFRESH_RATE_HZ), so every
+// simulated frame actually reaches the keypad instead of being skipped mid-flight.
+const BULLET_SPEED = 90;
 
 function init(state) {
   // Keep every value in state: the worker preserves it between update and draw calls.
@@ -52,34 +55,37 @@ function init(state) {
   state.score = 0;
   state.gameOver = false;
 
-  // Build a five-by-six formation. Each invader is an independent collision target.
-  for (let row = 0; row < 5; row += 1) {
+  // Build a three-by-six formation: fewer invaders means more reaction time before they land.
+  for (let row = 0; row < 3; row += 1) {
     for (let column = 0; column < 6; column += 1) {
       state.invaders.push({ x: 38 + column * 52, y: 34 + row * 31 });
     }
   }
+  state.initialInvaderCount = state.invaders.length;
 }
 
 function update(dt, input, state) {
   if (state.gameOver) {
-    if (input.isPressed('PREV') || input.isPressed('NEXT')) init(state);
+    // Only PREV restarts, so NEXT (fire) can't be mashed into an accidental new game.
+    if (input.isPressed('PREV')) init(state);
     return;
   }
 
-  // Input uses zero-based keypad indices: 3 is the left-middle key and 5 the right-middle key.
-  if (input.isDown(3)) state.playerX -= 185 * dt;
-  if (input.isDown(5)) state.playerX += 185 * dt;
+  // Input uses zero-based keypad indices: 6 is the bottom-left key and 8 the bottom-right key.
+  if (input.isDown(6)) state.playerX -= 70 * dt;
+  if (input.isDown(8)) state.playerX += 70 * dt;
   state.playerX = Math.max(15, Math.min(SCREEN_SIZE - 15, state.playerX));
 
   // A press, unlike isDown, adds exactly one bullet even when the key is held.
-  if (input.isPressed(1) && state.bullets.length < 3) {
+  if (input.isPressed('NEXT') && state.bullets.length < 3) {
     state.bullets.push({ x: state.playerX, y: SCREEN_SIZE - 39 });
   }
-  state.bullets.forEach((bullet) => { bullet.y -= 270 * dt; });
+  state.bullets.forEach((bullet) => { bullet.y -= BULLET_SPEED * dt; });
   state.bullets = state.bullets.filter((bullet) => bullet.y > -8);
 
   // The formation reverses and descends as a group at either screen edge.
-  const speed = 24 + (30 - state.invaders.length) * 1.7;
+  // Kept well below the player's speed so the formation never outruns the ship.
+  const speed = 10 + (state.initialInvaderCount - state.invaders.length) * 0.9;
   state.invaders.forEach((invader) => { invader.x += state.direction * speed * dt; });
   const edge = state.invaders.some((invader) => invader.x < 12 || invader.x > SCREEN_SIZE - 28);
   if (edge) {
@@ -121,7 +127,7 @@ function draw(display, state) {
   state.bullets.forEach((bullet) => rect(display, bullet.x - 2, bullet.y, 4, 9, '#ffdf6b'));
   rect(display, state.playerX - 15, SCREEN_SIZE - 26, 30, 7, '#62d8ff');
   rect(display, state.playerX - 5, SCREEN_SIZE - 33, 10, 8, '#62d8ff');
-  // A red bar is a hardware-friendly game-over signal; PREV/NEXT starts a new formation.
+  // A red bar is a hardware-friendly game-over signal; only PREV starts a new formation.
   if (state.gameOver) rect(display, 35, 165, SCREEN_SIZE - 70, 24, '#ff776d');
 }`;
 const scripts={starter,spaceInvaders};
@@ -136,7 +142,7 @@ function useInput(){const down=new Set(inputState.down),pressed=new Set(inputSta
 function renderFrames(frames){const changed=[];frames.forEach((commands,index)=>{const signature=JSON.stringify(commands);if(signature===frameSignatures[index])return;frameSignatures[index]=signature;changed.push(index);const context=keyCanvases[index].getContext('2d');commands.forEach((command)=>{if(command.type==='fill'){context.fillStyle=command.color;context.fillRect(0,0,118,118)}if(command.type==='rect'){context.fillStyle=command.color;context.fillRect(command.x,command.y,command.width,command.height)}})});return changed}
 function queueUploads(indices){if(!connected)return;indices.forEach((index)=>pendingUploads.add(index));if(!uploadRunning)void drainUploads()}
 async function drainUploads(){uploadRunning=true;try{while(connected&&pendingUploads.size){const[index]=pendingUploads;pendingUploads.delete(index);const delay=HARDWARE_INTERVAL_MS-(performance.now()-lastHardwareUpload);if(delay>0)await new Promise((resolve)=>setTimeout(resolve,delay));if(!connected)break;const blob=await new Promise((resolve,reject)=>keyCanvases[index].toBlob((value)=>value?resolve(value):reject(new Error('Could not encode key image.')),'image/jpeg',.82));await client.uploadContextualDisplayImage(new File([blob],`key-${index+1}.jpg`,{type:'image/jpeg'}),{mode:'single',keyNumber:index+1});lastHardwareUpload=performance.now()}}catch(error){pendingUploads.clear();setStatus(error.message,true)}finally{uploadRunning=false;if(connected&&pendingUploads.size)void drainUploads()}}
-function startWorker(){stopWorker();const workerBody=function(){const REFRESH_INTERVAL_MS=1000/30;let game=null,state={},last=performance.now(),nextRender=0;self.onmessage=(event)=>{if(event.data.type==='start'){try{game={};new Function('game',event.data.code+'\n;game.init=typeof init===\"function\"?init:null;game.update=typeof update===\"function\"?update:null;game.draw=typeof draw===\"function\"?draw:null;')(game);state={};game.init?.(state);self.postMessage({type:'status',message:'Running'});tick()}catch(error){self.postMessage({type:'error',message:error.message})}}else if(event.data.type==='input')game&&(game.input=event.data.input);else if(event.data.type==='stop')close()};function tick(){if(!game)return;const now=performance.now(),dt=Math.min((now-last)/1000,.1);last=now;const current=game.input||{down:[],pressed:[]},input={isDown:(key)=>current.down.includes(key),isPressed:(key)=>current.pressed.includes(key)};try{game.update?.(dt,input,state);if(now>=nextRender){const frames=[...Array(9)].map(()=>[]),display={keys:frames.map((commands)=>({fill:(color)=>commands.push({type:'fill',color}),fillRect:(x,y,width,height,color)=>commands.push({type:'rect',x,y,width,height,color})}))};game.draw?.(display,state);self.postMessage({type:'frame',frames});nextRender=now+REFRESH_INTERVAL_MS}setTimeout(tick,REFRESH_INTERVAL_MS)}catch(error){self.postMessage({type:'error',message:error.message})}}};
+function startWorker(){stopWorker();const workerBody=function(){const REFRESH_INTERVAL_MS=1000/10;let game=null,state={},last=performance.now(),nextRender=0;self.onmessage=(event)=>{if(event.data.type==='start'){try{game={};new Function('game',event.data.code+'\n;game.init=typeof init===\"function\"?init:null;game.update=typeof update===\"function\"?update:null;game.draw=typeof draw===\"function\"?draw:null;')(game);state={};game.init?.(state);self.postMessage({type:'status',message:'Running'});tick()}catch(error){self.postMessage({type:'error',message:error.message})}}else if(event.data.type==='input')game&&(game.input=event.data.input);else if(event.data.type==='stop')close()};function tick(){if(!game)return;const now=performance.now(),dt=Math.min((now-last)/1000,.1);last=now;const current=game.input||{down:[],pressed:[]},input={isDown:(key)=>current.down.includes(key),isPressed:(key)=>current.pressed.includes(key)};try{game.update?.(dt,input,state);if(now>=nextRender){const frames=[...Array(9)].map(()=>[]),display={keys:frames.map((commands)=>({fill:(color)=>commands.push({type:'fill',color}),fillRect:(x,y,width,height,color)=>commands.push({type:'rect',x,y,width,height,color})}))};game.draw?.(display,state);self.postMessage({type:'frame',frames});nextRender=now+REFRESH_INTERVAL_MS}setTimeout(tick,REFRESH_INTERVAL_MS)}catch(error){self.postMessage({type:'error',message:error.message})}}};
 const source=`(${workerBody.toString()})();`;worker=new Worker(URL.createObjectURL(new Blob([source],{type:'text/javascript'})));worker.onmessage=({data})=>{if(data.type==='frame')queueUploads(renderFrames(data.frames));if(data.type==='status')setStatus(data.message);if(data.type==='error'){setStatus(data.message,true);stopWorker()}};worker.postMessage({type:'start',code:editor.value});runButton.disabled=true;stopButton.disabled=false}
 function stopWorker(){worker?.terminate();worker=null;pendingUploads.clear();resetInput();runButton.disabled=false;stopButton.disabled=true}
 setInterval(()=>worker?.postMessage({type:'input',input:useInput()}),REFRESH_INTERVAL_MS);
