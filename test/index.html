@@ -20,7 +20,7 @@
 <script type="module">
 import { MXCreativeConsoleClient } from '../js/mx-creative-console.min.mjs';
 const editor=document.querySelector('#editor'),status=document.querySelector('#status'),connectButton=document.querySelector('#connect'),runButton=document.querySelector('#run'),stopButton=document.querySelector('#stop'),dot=document.querySelector('#connection-dot'),connectionLabel=document.querySelector('#connection-label');
-const REFRESH_RATE_HZ=10,REFRESH_INTERVAL_MS=1000/REFRESH_RATE_HZ,HARDWARE_INTERVAL_MS=1000/10,keyCanvases=[],keyElements=[],frameSignatures=Array(9).fill(null),pendingUploads=new Set(),inputState={down:new Set(),pressed:new Set()};let worker=null,connected=false,uploadRunning=false,lastHardwareUpload=0,keypadIndexBase=1;const client=new MXCreativeConsoleClient();
+const REFRESH_RATE_HZ=30,REFRESH_INTERVAL_MS=1000/REFRESH_RATE_HZ,HARDWARE_INTERVAL_MS=1000/30,keyCanvases=[],keyElements=[],frameSignatures=Array(9).fill(null),pendingUploads=new Set(),inputState={down:new Set(),pressed:new Set()};let worker=null,connected=false,uploadRunning=false,lastHardwareUpload=0,keypadIndexBase=1;const client=new MXCreativeConsoleClient();
 const starter=`function init(state) {
   state.x = 54;
   state.y = 54;
