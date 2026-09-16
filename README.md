@@ -1,6 +1,8 @@
-# MX Creative Console Script Lab
+# MX Keypad Script Lab
 
-The interactive game scripting workbench is in [index.html](./index.html). It loads the packaged WebHID client, runs user JavaScript in a Web Worker, mirrors display commands to a 3x3 keypad emulator, and can upload serialized frames to an attached MX Creative Keypad.
+The interactive game scripting workbench is in [index.html](./index.html). It loads the packaged WebHID client, runs user JavaScript in a Web Worker, mirrors display commands to a 3x3 keypad emulator, and can upload serialized frames to an attached MX Keypad.
+
+![MX Keypad Script Lab](assets/mx-keypad-script.gif)
 
 ## Disclaimer
 
